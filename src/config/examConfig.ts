@@ -1,7 +1,7 @@
 export type QuestionOrderMode = 'grouped' | 'mixed' | 'id-asc';
 
 export interface ExamConfiguration {
-  mathQuestions: number;      // Cantidad de preguntas matemáticasaa
+  mathQuestions: number;      // Cantidad de preguntas matemáticas
   verbalQuestions: number;    // Cantidad de preguntas verbales
   duration: number;           // Duración en segundos
   allowNavigation: boolean;   // Permitir navegar entre preguntas
