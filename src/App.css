@@ -3479,3 +3479,626 @@ padding: 20px 15px;
             font-size: 20px;
           }
         }
+
+        /* ==================== ESTILOS PARA CONSENTIMIENTO INFORMADO ==================== */
+
+/* ===== Overlay y Contenedor Principal ===== */
+.consentimiento-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.consentimiento-container {
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease;
+}
+
+/* ===== Header ===== */
+.consentimiento-header {
+  background: linear-gradient(135deg, #004379 0%, #005a9e 100%);
+  color: white;
+  padding: 25px 30px;
+  border-radius: 12px 12px 0 0;
+  text-align: center;
+}
+
+.consentimiento-logo {
+  height: 40px;
+  margin-bottom: 15px;
+}
+
+.consentimiento-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.consentimiento-user {
+  margin: 10px 0 0 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* ===== Contenido del Consentimiento ===== */
+.consentimiento-content {
+  padding: 30px;
+  overflow-y: auto;
+  flex: 1;
+  position: relative;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.consentimiento-text {
+  line-height: 1.8;
+  color: #333;
+}
+
+.consentimiento-text h3 {
+  color: #004379;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  line-height: 1.4;
+  text-align: center;
+  font-weight: 600;
+}
+
+.consentimiento-text p {
+  margin-bottom: 20px;
+  text-align: justify;
+  font-size: 1rem;
+}
+
+.consentimiento-text strong {
+  color: #004379;
+  font-weight: 600;
+}
+
+.consentimiento-final {
+  background-color: #f5f9ff;
+  padding: 20px;
+  border-left: 4px solid #004379;
+  border-radius: 4px;
+  font-weight: 500;
+  margin-top: 30px;
+}
+
+/* ===== Indicador de Scroll ===== */
+.scroll-indicator {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
+  padding: 30px 0 10px 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+.scroll-indicator span {
+  background-color: #004379;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  animation: bounce 2s infinite;
+}
+
+/* ===== Acciones ===== */
+.consentimiento-actions {
+  padding: 25px 30px;
+  background-color: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+}
+
+.consentimiento-checkbox {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: white;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.consentimiento-checkbox:has(input:checked) {
+  border-color: #4CAF50;
+  background-color: #f1f8f4;
+}
+
+.consentimiento-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  cursor: pointer;
+  accent-color: #4CAF50;
+}
+
+.consentimiento-checkbox label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+}
+
+.consentimiento-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.consentimiento-btn {
+  flex: 1;
+  max-width: 200px;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-reject {
+  background-color: #e0e0e0;
+  color: #666;
+}
+
+.btn-reject:hover {
+  background-color: #d0d0d0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-accept {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.btn-accept:hover:not(:disabled) {
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.btn-accept:disabled {
+  background-color: #ccc;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ===== Modal de Confirmación ===== */
+.confirmation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  animation: fadeIn 0.2s ease;
+}
+
+.confirmation-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: scaleIn 0.3s ease;
+}
+
+.confirmation-modal h3 {
+  color: #004379;
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+}
+
+.confirmation-modal p {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 25px;
+}
+
+.confirmation-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.confirmation-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cancel {
+  background-color: #e0e0e0;
+  color: #666;
+}
+
+.btn-cancel:hover {
+  background-color: #d0d0d0;
+}
+
+.btn-confirm {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.btn-confirm:hover {
+  background-color: #45a049;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+/* ==================== ESTILOS PARA RECHAZO ==================== */
+
+.rechazo-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.rechazo-container {
+  background: white;
+  border-radius: 12px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease;
+}
+
+/* ===== Header ===== */
+.rechazo-header {
+  background: linear-gradient(135deg, #004379 0%, #005a9e 100%);
+  color: white;
+  padding: 25px 30px;
+  text-align: center;
+  border-radius: 12px 12px 0 0;
+}
+
+.rechazo-logo {
+  height: 40px;
+  margin-bottom: 15px;
+}
+
+.rechazo-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* ===== Contenido ===== */
+.rechazo-content {
+  padding: 40px 30px;
+  text-align: center;
+}
+
+.rechazo-icon {
+  color: #004379;
+  margin-bottom: 20px;
+}
+
+.rechazo-content h3 {
+  color: #004379;
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+}
+
+.rechazo-message {
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.rechazo-info {
+  background-color: #f5f9ff;
+  padding: 25px;
+  border-radius: 8px;
+  border-left: 4px solid #004379;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.rechazo-info p {
+  color: #333;
+  line-height: 1.7;
+  margin-bottom: 15px;
+}
+
+.rechazo-info p:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== Beneficios ===== */
+.rechazo-benefits {
+  background-color: #f8f9fa;
+  padding: 25px;
+  border-radius: 8px;
+  text-align: left;
+  margin-bottom: 30px;
+}
+
+.rechazo-benefits h4 {
+  color: #004379;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+.rechazo-benefits ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rechazo-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.rechazo-benefits li svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ===== Acciones ===== */
+.rechazo-actions {
+  padding: 0 30px 30px 30px;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.rechazo-btn {
+  flex: 1;
+  max-width: 280px;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-secondary {
+  background-color: #e0e0e0;
+  color: #666;
+}
+
+.btn-secondary:hover {
+  background-color: #d0d0d0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+  background-color: #004379;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #003560;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 67, 121, 0.4);
+}
+
+/* ===== Footer ===== */
+.rechazo-footer {
+  padding: 20px 30px 30px 30px;
+  text-align: center;
+}
+
+.rechazo-footer p {
+  color: #999;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ==================== ANIMACIONES ==================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .consentimiento-container,
+  .rechazo-container {
+    max-height: 95vh;
+    max-width: 95%;
+  }
+
+  .consentimiento-header,
+  .rechazo-header {
+    padding: 20px;
+  }
+
+  .consentimiento-header h2,
+  .rechazo-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .consentimiento-content,
+  .rechazo-content {
+    padding: 20px;
+  }
+
+  .consentimiento-text h3 {
+    font-size: 1rem;
+  }
+
+  .consentimiento-text p {
+    font-size: 0.9rem;
+  }
+
+  .consentimiento-actions,
+  .rechazo-actions {
+    padding: 20px;
+  }
+
+  .consentimiento-buttons,
+  .rechazo-actions {
+    flex-direction: column;
+  }
+
+  .consentimiento-btn,
+  .rechazo-btn {
+    max-width: 100%;
+  }
+
+  .rechazo-content h3 {
+    font-size: 1.4rem;
+  }
+
+  .rechazo-message {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .consentimiento-logo,
+  .rechazo-logo {
+    height: 30px;
+  }
+
+  .consentimiento-header h2,
+  .rechazo-header h2 {
+    font-size: 1rem;
+  }
+
+  .consentimiento-text p,
+  .rechazo-info p {
+    font-size: 0.85rem;
+  }
+
+  .confirmation-modal {
+    padding: 20px;
+  }
+
+  .confirmation-buttons {
+    flex-direction: column;
+  }
+
+  .confirmation-btn {
+    width: 100%;
+  }
+}
+
+/* ==================== ACCESIBILIDAD ==================== */
+
+.consentimiento-btn:focus,
+.rechazo-btn:focus,
+.confirmation-btn:focus {
+  outline: 3px solid #FFD700;
+  outline-offset: 2px;
+}
+
+.consentimiento-checkbox input:focus {
+  outline: 2px solid #4CAF50;
+  outline-offset: 2px;
+}
+
+/* Para lectores de pantalla */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

@@ -13,11 +13,21 @@ import { questions as allQuestions } from './data/questions'; // ← CAMBIAR nom
 import { EXAM_CONFIG, getRandomQuestions } from './config/examConfig'; // ← NUEVO import
 import './App.css';
 import { submitExamToAPI } from './services/examSubmissionService';
+// ===== NUEVO: Importar tipos de tracking =====
+import type { QuestionInteraction, DeviceInfo } from './types';
+import { getDeviceInfo, logDeviceInfo } from './utils/deviceDetection';
+
+// ===== NUEVO: Importar componentes de consentimiento =====
+import Consentimiento from './components/Consentimiento';
+import ConsentimientoRechazo from './components/ConsentimientoRechazo';
 
 const EXAM_DURATION = 2.5 * 60 * 60;
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
+// ===== NUEVO: Estado para consentimiento =====
+  const [consentGiven, setConsentGiven] = useState<boolean | null>(null);
+// null = no ha respondido, true = aceptó, false = rechazó  
   const [showCredits, setShowCredits] = useState(false); // MOVER AQUÍ - nivel superior
 
     // ========== NUEVO: Generar preguntas aleatorias ==========
@@ -30,21 +40,138 @@ const App: React.FC = () => {
   }, []); // Array vacío = solo se ejecuta una vez
   // ========================================================
   
-    const [examState, setExamState] = useState<ExamState>({
+  const [examState, setExamState] = useState<ExamState>({
     isAuthenticated: false,
     isExamStarted: false,
     isExamFinished: false,
     currentQuestion: 0,
-    userAnswers: Array(examQuestions.length).fill(null),        // ← USAR examQuestions
-    checkedQuestions: Array(examQuestions.length).fill(false),  // ← USAR examQuestions
-    timeRemaining: EXAM_CONFIG.duration,                        // ← USAR EXAM_CONFIG
+    userAnswers: Array(examQuestions.length).fill(null),
+    checkedQuestions: Array(examQuestions.length).fill(false),
+    timeRemaining: EXAM_CONFIG.duration,
     questionTimes: [],
     currentQuestionStartTime: null,
     showWelcome: true,
-    selectedQuestions: examQuestions,                            // ← NUEVO campo
-    isReviewMode: false, // ← NUEVO campo
-    reviewQuestion: null // ← NUEVO campo
+    selectedQuestions: examQuestions,
+    isReviewMode: false,
+    reviewQuestion: null,
+    
+    // ===== NUEVO: Inicializar tracking de interacciones =====
+    questionInteractions: examQuestions.map((q, index) => ({
+      questionId: q.id,
+      questionIndex: index,
+      selectedAnswer: null,
+      isCorrect: false,
+      wasChecked: false,
+      viewedHint: false,
+      viewedFormulas: false,
+      timeSpent: 0,
+      firstVisitAt: 0,
+      lastVisitAt: 0,
+      visitCount: 0
+    })),
+    examStartTime: null
   });
+
+  // ==================== NUEVAS FUNCIONES DE TRACKING ====================
+
+/**
+ * Registra que el usuario vio el hint de una pregunta
+ */
+const handleHintViewed = (questionIndex: number) => {
+  setExamState(prev => {
+    const newInteractions = [...prev.questionInteractions];
+    const interaction = newInteractions[questionIndex];
+    
+    // Solo registrar la primera vez que ve el hint
+    if (!interaction.viewedHint) {
+      newInteractions[questionIndex] = {
+        ...interaction,
+        viewedHint: true,
+        hintViewedAt: Date.now()
+      };
+      
+      console.log(`💡 Hint visto en pregunta ${questionIndex + 1}`);
+    }
+    
+    return {
+      ...prev,
+      questionInteractions: newInteractions
+    };
+  });
+};
+
+/**
+ * Registra que el usuario vio las fórmulas
+ */
+const handleFormulasViewed = (questionIndex: number) => {
+  setExamState(prev => {
+    const newInteractions = [...prev.questionInteractions];
+    const interaction = newInteractions[questionIndex];
+    
+    // Solo registrar la primera vez que ve las fórmulas
+    if (!interaction.viewedFormulas) {
+      newInteractions[questionIndex] = {
+        ...interaction,
+        viewedFormulas: true,
+        formulasViewedAt: Date.now()
+      };
+      
+      console.log(`📐 Fórmulas vistas en pregunta ${questionIndex + 1}`);
+    }
+    
+    return {
+      ...prev,
+      questionInteractions: newInteractions
+    };
+  });
+};
+
+/**
+ * Actualiza la interacción cuando el usuario visita una pregunta
+ */
+  const updateQuestionVisit = (questionIndex: number) => {
+    setExamState(prev => {
+      const newInteractions = [...prev.questionInteractions];
+      const interaction = newInteractions[questionIndex];
+      const now = Date.now();
+      
+      newInteractions[questionIndex] = {
+        ...interaction,
+        firstVisitAt: interaction.firstVisitAt || now,
+        lastVisitAt: now,
+        visitCount: interaction.visitCount + 1
+      };
+      
+      return {
+        ...prev,
+        questionInteractions: newInteractions
+      };
+    });
+  };
+
+  /**
+   * Actualiza la interacción cuando el usuario chequea una respuesta
+   */
+  const updateQuestionCheck = (questionIndex: number) => {
+    setExamState(prev => {
+      const newInteractions = [...prev.questionInteractions];
+      const interaction = newInteractions[questionIndex];
+      const answer = prev.userAnswers[questionIndex];
+      const correctAnswer = examQuestions[questionIndex].correctAnswer;
+      
+      newInteractions[questionIndex] = {
+        ...interaction,
+        selectedAnswer: answer,
+        isCorrect: answer === correctAnswer,
+        wasChecked: true
+      };
+      
+      return {
+        ...prev,
+        questionInteractions: newInteractions
+      };
+    });
+  };
 
     // NUEVO: Estados para el modal
   const [modalConfig, setModalConfig] = useState({
@@ -94,6 +221,9 @@ const App: React.FC = () => {
         ...prev,
         currentQuestionStartTime: Date.now()
       }));
+      
+      // ===== NUEVO: Registrar visita a la pregunta =====
+      updateQuestionVisit(examState.currentQuestion);
     }
   }, [examState.currentQuestion, examState.isExamStarted, examState.isExamFinished]);
 
@@ -129,9 +259,29 @@ const App: React.FC = () => {
   };
 
   const downloadExamData = async () => {
+
+    // ===== NUEVO: Obtener información del dispositivo =====
+    const deviceInfo = getDeviceInfo();
+    logDeviceInfo(deviceInfo);
+    
+    // ===== NUEVO: Calcular estadísticas de uso de ayudas =====
+    const hintsViewed = examState.questionInteractions.filter(qi => qi.viewedHint).length;
+    const formulasViewed = examState.questionInteractions.filter(qi => qi.viewedFormulas).length;
+    
     const examData = {
       user: user,
       completionDate: new Date().toISOString(),
+      startDate: examState.examStartTime ? new Date(examState.examStartTime).toISOString() : undefined,
+    
+        // ===== NUEVO: Información de consentimiento =====
+      consent: {
+        given: true, // Siempre true aquí porque solo llegan los que aceptaron
+        timestamp: localStorage.getItem(`consent_timestamp_${user?.email}`) || null
+      },
+
+     // ===== NUEVO: Información del dispositivo =====
+      deviceInfo: deviceInfo,
+
 // ========== NUEVO: Información de configuración ==========
     examConfiguration: {
       mathQuestions: EXAM_CONFIG.mathQuestions,
@@ -141,13 +291,17 @@ const App: React.FC = () => {
     },
     // =========================================================      
       answers: examState.userAnswers.map((answer, index) => ({
-      questionId: examQuestions[index].id,              // ← CAMBIAR a examQuestions
-      questionTitle: examQuestions[index].title,        // ← CAMBIAR a examQuestions
-      questionArea: examQuestions[index].area,          // ← NUEVO: incluir área
-        selectedAnswer: answer,
-      correctAnswer: examQuestions[index].correctAnswer,// ← CAMBIAR a examQuestions
-      isCorrect: answer === examQuestions[index].correctAnswer // ← CAMBIAR
+        questionId: examQuestions[index].id,              // ← CAMBIAR a examQuestions
+        questionTitle: examQuestions[index].title,        // ← CAMBIAR a examQuestions
+        questionArea: examQuestions[index].area,          // ← NUEVO: incluir área
+          selectedAnswer: answer,
+        correctAnswer: examQuestions[index].correctAnswer,// ← CAMBIAR a examQuestions
+        isCorrect: answer === examQuestions[index].correctAnswer // ← CAMBIAR
       })),
+
+      // ===== NUEVO: Interacciones detalladas por pregunta =====
+      questionInteractions: examState.questionInteractions,
+
       questionTimes: examState.questionTimes,
       totalScore: examState.userAnswers.filter((answer, index) => 
         answer === examQuestions[index].correctAnswer     // ← CAMBIAR a examQuestions
@@ -160,6 +314,13 @@ const App: React.FC = () => {
       verbal: examState.userAnswers.filter((answer, index) => 
         examQuestions[index].area === 2 && answer === examQuestions[index].correctAnswer
       ).length
+    },
+    // ===== NUEVO: Estadísticas de uso de ayudas =====
+    helpUsageStats: {
+      totalHintsViewed: hintsViewed,
+      totalFormulasViewed: formulasViewed,
+      questionsWithHint: examQuestions.filter(q => q.pista && q.pista.trim().length > 0).length,
+      questionsWithFormulas: examQuestions.length
     }
     // ================================================
     };
@@ -211,40 +372,122 @@ const App: React.FC = () => {
       ...prev,
       isAuthenticated: true
     }));
+
+    // ===== NUEVO: Verificar si ya dio consentimiento antes =====
+    const previousConsent = localStorage.getItem(`consent_${userData.email}`);
+    if (previousConsent === 'true') {
+      setConsentGiven(true);
+      console.log('ℹ️ Consentimiento previamente aceptado');
+    } else if (previousConsent === 'false') {
+      setConsentGiven(false);
+      console.log('ℹ️ Consentimiento previamente rechazado');
+    } else {
+      setConsentGiven(null); // Mostrar pantalla de consentimiento
+    }
   };
 
-  const handleLogout = () => {
+  // ===== NUEVO: Manejar aceptación de consentimiento =====
+  const handleConsentAccept = () => {
+    setConsentGiven(true);
+
+    const timestamp = new Date().toISOString();
+    
+    if (user?.email) {
+      localStorage.setItem(`consent_${user.email}`, 'true');
+      localStorage.setItem(`consent_timestamp_${user.email}`, timestamp); // ← NUEVO
+    }
+        
+    console.log('✅ Consentimiento aceptado');
+    
+    // Opcional: Guardar en localStorage para no volver a preguntar
+    if (user?.email) {
+      localStorage.setItem(`consent_${user.email}`, 'true');
+    }
+  };
+
+  // ===== NUEVO: Manejar rechazo de consentimiento =====
+  const handleConsentReject = () => {
+    setConsentGiven(false);
+    console.log('❌ Consentimiento rechazado');
+    
+    // Opcional: Guardar en localStorage
+    if (user?.email) {
+      localStorage.setItem(`consent_${user.email}`, 'false');
+    }
+  };
+
+  // ===== NUEVO: Volver al inicio desde pantalla de rechazo =====
+  const handleGoBackFromRejection = () => {
     setUser(null);
-    setShowCredits(false); // Reset credits también
-  // ========== NUEVO: Regenerar preguntas aleatorias ==========
-  console.log('🔄 Regenerando preguntas para nuevo intento...');
-  const newQuestions = getRandomQuestions(allQuestions, EXAM_CONFIG);
-  console.log(`✅ ${newQuestions.length} nuevas preguntas generadas`);
-  // ===========================================================    
+    setConsentGiven(null);
+    
+    // Limpiar localStorage
+    if (user?.email) {
+      localStorage.removeItem(`consent_${user.email}`);
+    }
+  };
+
+    const handleLogout = () => {
+
+
+  // ===== NUEVO: Limpiar consentimiento de localStorage =====
+    if (user?.email) {
+      localStorage.removeItem(`consent_${user.email}`);
+      localStorage.removeItem(`consent_timestamp_${user.email}`);
+      console.log('🧹 Consentimiento limpiado al cerrar sesión');
+    }
+
+    setUser(null);
+    setShowCredits(false);
+    setConsentGiven(null);  // ===== NUEVO: Resetear consentimiento =====
+
+    const newQuestions = getRandomQuestions(allQuestions, EXAM_CONFIG);
+    
     setExamState({
       isAuthenticated: false,
       isExamStarted: false,
       isExamFinished: false,
       currentQuestion: 0,
-      userAnswers: Array(newQuestions.length).fill(null),        // ← USAR newQuestions
-      checkedQuestions: Array(newQuestions.length).fill(false),  // ← USAR newQuestions 
+      userAnswers: Array(newQuestions.length).fill(null),
+      checkedQuestions: Array(newQuestions.length).fill(false),
       timeRemaining: EXAM_DURATION,
       questionTimes: [],
       currentQuestionStartTime: null,
       showWelcome: true,
       selectedQuestions: newQuestions,
-      isReviewMode: false,      // ← AGREGAR
-      reviewQuestion: null      // ← AGREGAR
+      isReviewMode: false,
+      reviewQuestion: null,
+      
+      // ===== NUEVO: Reinicializar tracking =====
+      questionInteractions: newQuestions.map((q, index) => ({
+        questionId: q.id,
+        questionIndex: index,
+        selectedAnswer: null,
+        isCorrect: false,
+        wasChecked: false,
+        viewedHint: false,
+        viewedFormulas: false,
+        timeSpent: 0,
+        firstVisitAt: 0,
+        lastVisitAt: 0,
+        visitCount: 0
+      })),
+      examStartTime: null
     });
   };
 
   const startExam = () => {
+    const startTime = Date.now();
+    
     setExamState(prev => ({
       ...prev,
       isExamStarted: true,
       timeRemaining: EXAM_DURATION,
-      currentQuestionStartTime: Date.now()
+      currentQuestionStartTime: startTime,
+      examStartTime: startTime  // ===== NUEVO: Guardar timestamp de inicio =====
     }));
+    
+    console.log(`🚀 Examen iniciado a las ${new Date(startTime).toLocaleTimeString()}`);
   };
 
   const handleAnswerSelect = (answerIndex: number) => {
@@ -269,6 +512,9 @@ const App: React.FC = () => {
       ...prev,
       checkedQuestions: newCheckedQuestions
     }));
+
+    // ===== NUEVO: Registrar que se chequeó la pregunta =====
+    updateQuestionCheck(examState.currentQuestion);
   };
 
   const nextQuestion = () => {
@@ -370,7 +616,21 @@ const App: React.FC = () => {
       showWelcome: false,
       selectedQuestions: newQuestions,
       isReviewMode: false,      // ← AGREGAR
-      reviewQuestion: null      // ← AGREGAR
+      reviewQuestion: null,      // ← AGREGAR
+      questionInteractions: newQuestions.map((q, index) => ({
+      questionId: q.id,
+      questionIndex: index,
+      selectedAnswer: null,
+      isCorrect: false,
+      wasChecked: false,
+      viewedHint: false,
+      viewedFormulas: false,
+      timeSpent: 0,
+      firstVisitAt: 0,
+      lastVisitAt: 0,
+      visitCount: 0
+    })),
+    examStartTime: null
     });
   };
 
@@ -439,6 +699,23 @@ const prevReviewQuestion = () => {
       return <Login onLogin={handleLogin} />;
     }
 
+          {/* ===== PANTALLA DE CONSENTIMIENTO ===== */}
+    if (examState.isAuthenticated && consentGiven === null) {
+        return <Consentimiento 
+          onAccept={handleConsentAccept}
+          onReject={handleConsentReject}
+          userName={user?.email}
+        />
+    }
+
+          {/* ===== PANTALLA DE RECHAZO ===== */}
+      if (examState.isAuthenticated && consentGiven === false) {
+        return <ConsentimientoRechazo 
+          onGoBack={handleGoBackFromRejection}
+          pdfUrl="https://www.tec.ac.cr/sites/default/files/media/doc/cuaderno_de_ejercicios_para_la_paa_tec-2025-cea-1.pdf"
+        />
+      }
+    
     // Mostrar página de bienvenida después del login
     if (examState.showWelcome) {
       return (
@@ -904,7 +1181,10 @@ const prevReviewQuestion = () => {
             userAnswers={examState.userAnswers}
             checkedQuestions={examState.checkedQuestions}
             onNavigateToQuestion={navigateToQuestion}
-            allQuestions={examQuestions} 
+            allQuestions={examQuestions}   
+
+            onHintViewed={() => handleHintViewed(examState.currentQuestion)}
+            onFormulasViewed={() => handleFormulasViewed(examState.currentQuestion)}            
           />
           
           <div className="navigation-buttons">

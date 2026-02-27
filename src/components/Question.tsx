@@ -16,6 +16,9 @@ interface QuestionProps {
   checkedQuestions: boolean[];
   onNavigateToQuestion: (questionIndex: number) => void;
   allQuestions: QuestionType[];  // ← NUEVO
+  // ===== NUEVO: Callbacks para tracking ===== (+2 líneas)
+  onHintViewed?: () => void;
+  onFormulasViewed?: () => void;  
 }
 
 const Question: React.FC<QuestionProps> = ({
@@ -31,7 +34,9 @@ const Question: React.FC<QuestionProps> = ({
   userAnswers,
   checkedQuestions,
   onNavigateToQuestion,
-  allQuestions  // ← NUEVO
+  allQuestions,  // ← NUEVO
+  onHintViewed,   // ← NUEVO
+  onFormulasViewed // ← NUEVO
 }) => {
   const [showHint, setShowHint] = useState(false);
   const [showFormulas, setShowFormulas] = useState(false); // NUEVO: Estado para fórmulas
@@ -39,6 +44,7 @@ const Question: React.FC<QuestionProps> = ({
 
   useEffect(() => {
     setShowHint(false);
+    setShowFormulas(false);
   }, [questionNumber]);
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -194,10 +200,18 @@ const renderSplitSegments = () => {
       {question.area === 1 && (
         <div className="formulas-container">
           <button 
-            className="formulas-toggle-btn"
-            onClick={() => setShowFormulas(!showFormulas)}
-            aria-label={showFormulas ? "Ocultar fórmulas" : "Ver fórmulas y conceptos"}
-          >
+              className="formulas-toggle-btn"
+              onClick={() => {
+                const newShowFormulas = !showFormulas;
+                setShowFormulas(newShowFormulas);
+                
+                // ===== NUEVO: Notificar que se vieron las fórmulas ===== (+4 líneas)
+                if (newShowFormulas && onFormulasViewed) {
+                  onFormulasViewed();
+                }
+              }}
+              aria-label={showFormulas ? "Ocultar Fórmulas" : "Ver Fórmulas y Conceptos Básicos"}
+            >
             <svg 
               width="20" 
               height="20" 
@@ -346,10 +360,18 @@ const renderSplitSegments = () => {
       {question.pista && !checked && (
         <div className="hint-container">
           <button 
-            className="hint-toggle-btn"
-            onClick={() => setShowHint(!showHint)}
-            aria-label={showHint ? "Ocultar pista" : "Ver pista"}
-          >
+              className="hint-toggle-btn"
+              onClick={() => {
+                const newShowHint = !showHint;
+                setShowHint(newShowHint);
+                
+                // ===== NUEVO: Notificar que se vio el hint ===== (+4 líneas)
+                if (newShowHint && onHintViewed) {
+                  onHintViewed();
+                }
+              }}
+              aria-label={showHint ? "Ocultar pista" : "Ver pista"}
+            >
             <svg 
               width="20" 
               height="20" 
