@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'src/features/exam/question-bank/all.questions.ts']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

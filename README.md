@@ -1,73 +1,115 @@
-# React + TypeScript + Vite
+# Examen de Practica PAA TEC
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicacion web para practicar el examen de admision del TEC. El proyecto esta construido con React, TypeScript y Vite, y fue reorganizado con una arquitectura `feature-first` para reducir acoplamiento y facilitar mantenimiento.
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 20 o superior
+- `pnpm` recomendado
 
-## React Compiler
+## Scripts
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm install
+pnpm dev
+pnpm build
+pnpm lint
+pnpm test
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Arquitectura
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+La aplicacion se divide en capas y features:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+src/
+  app/         # composition root, shell y resolucion de pantallas
+  features/    # auth, consent y exam
+  shared/      # componentes y utilidades compartidas
 ```
+
+### `app/`
+
+- `App.tsx`: composition root delgado
+- `AppShell.tsx`: orquestacion de flujo de pantallas
+- `flow/resolveAppScreen.ts`: resolucion centralizada del estado visual
+- `providers/MathJaxProvider.tsx`: provider de MathJax
+
+### `features/auth`
+
+- `domain/`: tipos, validaciones y errores de autenticacion
+- `application/`: casos de uso y puertos
+- `infrastructure/`: gateways local y Web API
+- `presentation/`: pantalla de login y hook del formulario
+
+Patron principal: `Strategy` para intercambiar autenticacion local y remota sin condicionales dispersos.
+
+### `features/consent`
+
+- `domain/`: tipos de consentimiento
+- `application/`: casos de uso y puerto `ConsentStore`
+- `infrastructure/`: adaptador de `localStorage`
+- `presentation/`: pantallas de aceptacion y rechazo
+
+Patron principal: `Adapter` para aislar almacenamiento del navegador.
+
+### `features/exam`
+
+- `domain/`: entidades, value objects, configuracion y servicios puros
+- `application/`: reducer, acciones, hooks y casos de uso
+- `infrastructure/`: repositorio de preguntas, envio HTTP, device info e IP publica
+- `question-bank/`: banco de preguntas dividido por area
+- `presentation/`: pantallas y componentes del examen
+
+Patrones principales:
+
+- `Reducer` para la sesion del examen
+- `Facade` mediante `useExamController`
+- `Repository` para el banco de preguntas
+- `Strategy` para seleccion y ordenamiento de preguntas
+- `Builder/Mapper` para el payload de envio
+
+### `shared/`
+
+- `components/Modal`: modal reutilizable
+- `ui/MathJaxHtml`: render seguro de HTML + MathJax
+- `lib/browser/downloadJson.ts`: descarga local de respaldo
+- `lib/logging/logger.ts`: logger simple
+
+## Flujo funcional
+
+1. Login
+2. Consentimiento
+3. Bienvenida
+4. Instrucciones
+5. Examen
+6. Revision
+7. Resultados
+
+La pantalla actual se deriva desde `resolveAppScreen`, no desde condicionales distribuidos por toda la UI.
+
+## Reglas de implementacion
+
+- `presentation` no debe importar directamente desde `infrastructure`
+- `domain` no debe depender de React ni de APIs del navegador
+- Nuevas reglas de negocio deben entrar por `domain/` o `application/`
+- Nuevas integraciones con navegador o red deben entrar por `infrastructure/`
+- Si algo solo lo usa un feature, no debe ir a `shared/`
+
+## Compatibilidad con codigo legado
+
+Se dejaron wrappers en carpetas antiguas como `src/components`, `src/services`, `src/config` y `src/types` para evitar romper imports existentes mientras se completa la migracion interna.
+
+## Calidad
+
+Actualmente el proyecto valida con:
+
+- `pnpm build`
+- `pnpm lint`
+- `pnpm test`
+
+Incluye pruebas iniciales para:
+
+- resolucion de pantallas
+- reducer de sesion del examen
+- servicios de scoring
