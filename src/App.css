@@ -39,20 +39,61 @@
   max-width: 100%;
   border-collapse: collapse;
   margin: 16px auto;
-  background: #fff;
-  border: 1px solid #9fb7cb;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .latex-table th,
 .latex-table td {
-  border: 1px solid #9fb7cb;
+  border: 1px solid var(--border-color);
   padding: 8px 10px;
   text-align: center;
 }
 
 .latex-table th {
-  background: #eaf5ff;
-  color: #17324d;
+  background: var(--bg-input-selected);
+  color: var(--text-primary);
+}
+
+/* Citation Box Styles for Question 79 */
+.citation-container {
+  background: linear-gradient(to bottom, var(--bg-input-hover) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 15px 0;
+  box-shadow: 0 2px 6px var(--shadow-color);
+}
+
+.citation-column-wrapper {
+  column-count: 2;
+  column-gap: 24px;
+  text-align: justify;
+}
+
+@media (max-width: 768px) {
+  .citation-column-wrapper {
+    column-count: 1;
+  }
+}
+
+.citation-title {
+  text-align: center;
+  font-weight: bold;
+  margin: 15px 0 10px 0;
+  color: var(--text-primary);
+}
+
+.citation-source {
+  text-align: right;
+  margin-top: 10px;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.citation-spacer {
+  height: 10px;
 }
 
 .latex-list,

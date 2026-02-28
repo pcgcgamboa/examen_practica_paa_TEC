@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import type { AuthenticatedUser } from '../../features/auth/domain/auth.types';
 import { acceptConsent } from '../../features/consent/application/use-cases/acceptConsent';
 import { clearConsent } from '../../features/consent/application/use-cases/clearConsent';
@@ -15,6 +15,22 @@ interface UseConsentCoordinatorParams {
 
 export const useConsentCoordinator = ({ user, consentStore, setConsentDecision }: UseConsentCoordinatorParams) => {
   const consentTimestamp = user ? consentStore.loadTimestamp(user.email) : null;
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const handleBeforeUnload = () => {
+      clearConsent(consentStore, user.email);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [consentStore, user]);
 
   const syncConsentDecision = (authenticatedUser: AuthenticatedUser) => {
     setConsentDecision(loadConsentDecision(consentStore, authenticatedUser.email));

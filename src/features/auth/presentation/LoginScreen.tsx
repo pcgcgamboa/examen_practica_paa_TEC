@@ -2,6 +2,7 @@ import React from 'react';
 import type { AuthenticatedUser } from '../domain/auth.types';
 import { AUTH_CONFIG } from '../config/auth.config';
 import { useLoginForm } from './useLoginForm';
+import { useTheme } from '../../../shared/providers/ThemeProvider';
 import styles from './LoginScreen.module.css';
 
 interface LoginScreenProps {
@@ -20,9 +21,20 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     setShowPassword,
     handleSubmit,
   } = useLoginForm(onLogin);
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className={styles.page}>
+      <div className={styles.themeToggleContainer}>
+        <button
+          className={styles.themeToggleButton}
+          onClick={toggleTheme}
+          aria-label={`Cambiar a modo ${theme === 'light' ? 'oscuro' : 'claro'}`}
+          title={`Cambiar a modo ${theme === 'light' ? 'oscuro' : 'claro'}`}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+      </div>
       <div className={styles.card}>
         <div className={styles.header}>
           <h2 className={styles.title}>Sistema de Practica de Examen de Admision</h2>

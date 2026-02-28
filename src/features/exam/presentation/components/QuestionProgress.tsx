@@ -65,34 +65,26 @@ const QuestionProgress: React.FC<QuestionProgressProps> = ({
             const questionArea = q.area; // 1: Math, 2: Verbal
 
             let statusClass = styles.statusUnanswered;
-            let statusName = 'Sin responder';
 
             if (isChecked) {
               statusClass = styles.statusChecked;
-              statusName = 'Chequeada';
             } else if (hasAnswer) {
               statusClass = styles.statusAnswered;
-              statusName = 'Respondida';
-            }
-
-            if (isCurrent) {
-              statusClass = styles.statusCurrent;
-              statusName = 'Actual';
             }
 
             const areaClass = `${styles.segmentArea} ${questionArea === 1 ? styles.areaMath : styles.areaVerbal}`;
-            const areaName = questionArea === 1 ? 'Matematico' : 'Verbal';
 
             return (
               <div
                 key={index}
                 className={`${styles.progressSegment} ${isCurrent ? styles.progressSegmentCurrent : ''}`}
-                style={{ width: `${100 / totalQuestions}%` }}
                 onClick={() => onNavigateToQuestion(index)}
-                title={`Pregunta ${index + 1} - ${areaName} - ${statusName}`}
               >
+                <div className={styles.progressTooltip}>
+                  {index + 1}
+                </div>
                 <div className={areaClass}></div>
-                <div className={statusClass}></div>
+                <div className={`${styles.segmentStatus} ${statusClass}`}></div>
               </div>
             );
           })}

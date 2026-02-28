@@ -2,8 +2,16 @@ import type { ConsentDecision } from '../../domain/consent.types';
 import type { ConsentStore } from '../../application/ports/ConsentStore';
 
 export class LocalConsentStore implements ConsentStore {
+  private getDecisionKey(email: string) {
+    return `consent_${email}`;
+  }
+
+  private getTimestampKey(email: string) {
+    return `consent_timestamp_${email}`;
+  }
+
   load(email: string): ConsentDecision | null {
-    const value = localStorage.getItem(`consent_${email}`);
+    const value = sessionStorage.getItem(this.getDecisionKey(email));
 
     if (value === 'true') {
       return 'accepted';
@@ -17,20 +25,20 @@ export class LocalConsentStore implements ConsentStore {
   }
 
   loadTimestamp(email: string): string | null {
-    return localStorage.getItem(`consent_timestamp_${email}`);
+    return sessionStorage.getItem(this.getTimestampKey(email));
   }
 
   accept(email: string, timestamp: string): void {
-    localStorage.setItem(`consent_${email}`, 'true');
-    localStorage.setItem(`consent_timestamp_${email}`, timestamp);
+    sessionStorage.setItem(this.getDecisionKey(email), 'true');
+    sessionStorage.setItem(this.getTimestampKey(email), timestamp);
   }
 
   reject(email: string): void {
-    localStorage.setItem(`consent_${email}`, 'false');
+    sessionStorage.setItem(this.getDecisionKey(email), 'false');
   }
 
   clear(email: string): void {
-    localStorage.removeItem(`consent_${email}`);
-    localStorage.removeItem(`consent_timestamp_${email}`);
+    sessionStorage.removeItem(this.getDecisionKey(email));
+    sessionStorage.removeItem(this.getTimestampKey(email));
   }
 }

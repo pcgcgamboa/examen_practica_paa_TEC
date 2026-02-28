@@ -20,6 +20,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     if (savedTheme === 'light' || savedTheme === 'dark') {
       return savedTheme;
     }
+
+    // Check system preference
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+
     // Default to light
     return 'light';
   });
@@ -27,7 +33,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   useEffect(() => {
     // Update local storage
     localStorage.setItem('app-theme', theme);
-    
+
     // Update html attribute for global CSS selection
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
